@@ -1,4 +1,6 @@
-﻿using Microsoft.Xrm.Sdk;
+﻿using ConsoleDeTreinamento.Model;
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Tooling.Connector;
 using System;
 using System.Collections.Generic;
@@ -14,9 +16,9 @@ namespace ConsoleDeTreinamento
         {
             IOrganizationService service = ConnectionFactory.GetConnection();
 
-            int totalDeOportunidades = 1;
-            string cnpj = "12.1254.214/0001-55";
-            string nomeDaConta = "Hello World! 2";
+            int totalDeOportunidades = 2;
+            string cnpj = "13.1254.214/0001-65";
+            string nomeDaConta = "Hello World! Atualizado";
 
             //Tipos Picklist
             OptionSetValue nivelDoCliente = new OptionSetValue(863260002);
@@ -26,23 +28,70 @@ namespace ConsoleDeTreinamento
 
             EntityReference contatoPrimario = new EntityReference(
                 "contact",
-                new Guid("7469fd95-c0bd-4236-90bf-1d1100291df5")
+                new Guid("15a17064-1ae7-e611-80f4-e0071b661f01")
             );
 
-            Guid customId = Guid.NewGuid();
+            ExecuteMultipleRequest makeRequest = new ExecuteMultipleRequest()
+            {
+                Settings = new ExecuteMultipleSettings()
+                {
+                    ContinueOnError = false,
+                    ReturnResponses = true
+                },
+                Requests = new OrganizationRequestCollection()
+            };
 
-            Console.WriteLine($"CUSTOMID: {customId}");
+            Account contaModel = new Account();
 
-            Entity conta = new Entity("account", customId);
-            conta["mib_cnpj"] = cnpj;
-            conta["name"] = nomeDaConta;
-            conta["mib_numerototaldeoportunidades"] = totalDeOportunidades;
-            conta["mib_niveldaconta"] = nivelDoCliente;
-            conta["mib_valortotaldeoportunidades"] = valorTotalDeOportunidades;
-            conta["primarycontactid"] = contatoPrimario;
-            Guid contaId = service.Create(conta);
-            Console.WriteLine(contaId);
-            Console.ReadKey();
+            for (int i = 0; i < 100; i++)
+            {
+                Guid id = Guid.NewGuid();
+
+                if (i == 10)
+                    id = new Guid("72099e4e-31fc-45cf-a6de-1e23b88a0de0");
+                else 
+                    if (i == 11)
+                        id = new Guid("d4e7a6f3-80f1-45f1-9fcb-3cfbb5c8f3bd");
+
+                    Entity novaConta = contaModel.MakeEntity(
+                        totalDeOportunidades,
+                        cnpj,
+                        nomeDaConta + (i * 2),
+                        nivelDoCliente,
+                        valorTotalDeOportunidades,
+                        contatoPrimario,
+                        id
+                    );
+
+                UpsertRequest upsertRequest = new UpsertRequest()
+                {
+                    Target = novaConta
+                };
+                makeRequest.Requests.Add(upsertRequest);
+            }
+
+            ExecuteMultipleResponse executeMultipleResponse = (ExecuteMultipleResponse)service.Execute(makeRequest);
+
+            foreach (var responseItem in executeMultipleResponse.Responses)
+            {
+                Console.WriteLine(responseItem.RequestIndex);
+
+                //A criação realmente aconteceu
+                if (responseItem.Response != null)
+                    Console.WriteLine(responseItem.Response);
+
+                if (responseItem.Fault != null)
+                    Console.WriteLine(responseItem.Fault);
+            }
+        }
+
+        private static void MakeCreateRequest(ExecuteMultipleRequest makeRequest, Entity novaConta)
+        {
+            CreateRequest createRequest = new CreateRequest()
+            {
+                Target = novaConta
+            };
+            makeRequest.Requests.Add(createRequest);
         }
     }
 }
