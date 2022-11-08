@@ -44,10 +44,10 @@ namespace ConsoleDeTreinamento
 
             CrmServiceClient serviceClient = new CrmServiceClient(
                 "AuthType=OAuth;" +
-                "Username=admin@treinamentofgvmdb.onmicrosoft.com;" +
+                "Username=admin@mdbfgv.onmicrosoft.com;" +
                 "Password=P@ssw0rd;" +
-                "Url=https://mibfgv.crm2.dynamics.com/;" +
-                "AppId=76c8f2b5-dd99-468a-b1fa-d7a501166b9f;" +
+                "Url=https://org95f33a51.crm2.dynamics.com/;" +
+                "AppId=7d84cc19-4d89-4db5-8503-d54615eb9f91;" +
                 "RedirectUri=app://58145B91-0C36-4500-8554-080854F2AC97;"
             );
             

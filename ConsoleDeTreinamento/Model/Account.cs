@@ -210,5 +210,60 @@ namespace ConsoleDeTreinamento.Model
                 //);
             }
         }
+
+
+
+        private static void FetchComOuter(IOrganizationService service)
+        {
+            string fetchXml = @"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
+                                  <entity name='account'>
+                                    <attribute name='name' />
+                                    <attribute name='primarycontactid' />
+                                    <attribute name='telephone1' />
+                                    <attribute name='accountid' />
+                                    <order attribute='name' descending='false' />
+                                    <link-entity name='contact' from='contactid' to='primarycontactid' link-type='outer' alias='aa' />
+                                    <filter type='and'>
+                                        <condition entityname='aa' attribute='contactid' operator='null' />
+                                    </filter>
+                                  </entity>
+                                </fetch>";
+
+            EntityCollection accounts = service.RetrieveMultiple(
+                new FetchExpression(fetchXml));
+
+            foreach (Entity account in accounts.Entities)
+            {
+                Console.WriteLine(account["name"].ToString());
+            }
+        }
+
+        private static void FetchComInner(IOrganizationService service)
+        {
+            string fetchXml = @"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
+                                  <entity name='account'>
+                                    <attribute name='name' />
+                                    <attribute name='primarycontactid' />
+                                    <attribute name='accountid' />
+                                    <order attribute='name' descending='false' />
+                                    <link-entity name='contact' from='contactid' to='primarycontactid' link-type='inner' alias='contact'>
+                                      <attribute name='telephone1' />
+                                      <filter type='and'>
+                                        <condition attribute='telephone1' operator='not-null' />
+                                      </filter>
+                                    </link-entity>
+                                  </entity>
+                                </fetch>";
+
+            EntityCollection accounts = service.RetrieveMultiple(
+                new FetchExpression(fetchXml));
+
+            foreach (Entity account in accounts.Entities)
+            {
+                Console.WriteLine(
+                    ((AliasedValue)account["contact.telephone1"]).Value.ToString()
+                );
+            }
+        }
     }
 }
