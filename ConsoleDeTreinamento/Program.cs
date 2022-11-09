@@ -6,6 +6,7 @@ using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,54 +17,38 @@ namespace ConsoleDeTreinamento
     {
         static void Main(string[] args)
         {
-
-            #region Exemplo recuperando Id no laço
-            //List<Guid> accountIds = new List<Guid>();
-
-            //foreach (Entity account in accounts.Entities)
-            //{
-            //    accountIds.Add(account.Id);
-            //}
-            #endregion
-
             IOrganizationService service = ConnectionFactory.GetConnection();
-            EntityCollection accounts = QueryAccounts(service);
-
-            List<ConditionExpression> conditions = new List<ConditionExpression>();
-            AddConditions(accounts, conditions);
-            EntityCollection allContacts = QueryContacts(service, conditions);
-
-            foreach (Entity account in accounts.Entities)
-            {
-                Console.WriteLine(account["name"].ToString());
-
-                var contactByAccount = (from contact in allContacts.Entities
-                                        where ((EntityReference)contact["parentcustomerid"]).Id == account.Id
-                                        select contact).ToList();
-
-                foreach (var contact in contactByAccount)
-                {
-                    Console.WriteLine(contact["fullname"].ToString());
-                }
-
-                Console.WriteLine("----------------");
-            }
-
+            
             Console.ReadKey();
         }
 
-        private static EntityCollection QueryContacts(IOrganizationService service, List<ConditionExpression> conditions)
+
+        private static void QueryExpressionContacts(IOrganizationService service)
+        {
+            EntityCollection allContacts = QueryContacts(service);
+
+            foreach (Entity contact in allContacts.Entities)
+            {
+                Console.WriteLine("CONTATO:");
+                Console.WriteLine(contact["fullname"].ToString());
+                Console.WriteLine(contact["telephone1"].ToString());
+
+                Console.WriteLine("TELEFONE DA CONTA");
+                Console.WriteLine(((AliasedValue)contact["account.telephone1"]).Value.ToString());
+            }
+        }
+
+        private static EntityCollection QueryContacts(IOrganizationService service)
         {
             QueryExpression queryContacts = new QueryExpression("contact");
-            queryContacts.ColumnSet.AddColumns("fullname", "parentcustomerid");
+            queryContacts.ColumnSet.AddColumns("fullname", "telephone1");
 
-            FilterExpression filterByParent = new FilterExpression();
-            filterByParent.FilterOperator = LogicalOperator.Or;
-            filterByParent.Conditions.AddRange(conditions);
-            queryContacts.Criteria.AddFilter(filterByParent);
+            queryContacts.AddLink("account", "accountid", "parentcustomerid", JoinOperator.Inner);
+            queryContacts.LinkEntities.FirstOrDefault().EntityAlias = "account";
+            queryContacts.LinkEntities.FirstOrDefault().LinkCriteria.AddCondition("telephone1", ConditionOperator.NotNull);
+            queryContacts.LinkEntities.FirstOrDefault().Columns.AddColumns("telephone1");
 
-            EntityCollection allContacts = service.RetrieveMultiple(queryContacts);
-            return allContacts;
+            return service.RetrieveMultiple(queryContacts);
         }
 
         private static void AddConditions(EntityCollection accounts, List<ConditionExpression> conditions)
